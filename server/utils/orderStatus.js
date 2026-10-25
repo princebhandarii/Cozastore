@@ -1,0 +1,48 @@
+import { ApiError } from "./ApiError.js";
+
+export const ORDER_STATUSES = [
+  "PENDING_PAYMENT",
+  "PAYMENT_FAILED",
+  "PENDING_COD_CONFIRMATION",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "CANCELLED",
+  "RETURN_REQUESTED",
+  "RETURN_APPROVED",
+  "RETURN_REJECTED",
+  "RETURN_PICKED_UP",
+  "RETURNED",
+  "REFUND_INITIATED",
+  "REFUNDED",
+];
+
+// Allowed next states for every state. Anything not listed is rejected.
+export const TRANSITIONS = {
+  PENDING_PAYMENT: ["CONFIRMED", "PENDING_COD_CONFIRMATION", "PAYMENT_FAILED", "CANCELLED"],
+  PAYMENT_FAILED: ["PENDING_PAYMENT", "CONFIRMED", "PENDING_COD_CONFIRMATION", "CANCELLED"],
+  PENDING_COD_CONFIRMATION: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["PROCESSING", "CANCELLED"],
+  PROCESSING: ["SHIPPED", "CANCELLED"],
+  SHIPPED: ["OUT_FOR_DELIVERY"],
+  OUT_FOR_DELIVERY: ["DELIVERED"],
+  DELIVERED: ["RETURN_REQUESTED"],
+  CANCELLED: [],
+  RETURN_REQUESTED: ["RETURN_APPROVED", "RETURN_REJECTED"],
+  RETURN_APPROVED: ["RETURN_PICKED_UP"],
+  RETURN_REJECTED: [],
+  RETURN_PICKED_UP: ["RETURNED"],
+  RETURNED: ["REFUND_INITIATED"],
+  REFUND_INITIATED: ["REFUNDED"],
+  REFUNDED: [],
+};
+
+export const canTransition = (from, to) => (TRANSITIONS[from] || []).includes(to);
+
+export const assertTransition = (from, to) => {
+  if (!canTransition(from, to)) {
+    throw new ApiError(409, `Cannot change order status from ${from} to ${to}`, "INVALID_STATUS_TRANSITION");
+  }
+};
